@@ -1,0 +1,31 @@
+name: Docker Build and Push
+
+on:
+  push:
+    branches:
+      - main  # Change this if you're using a different branch
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "bunny543" --password-stdin
+
+      - name: Build Docker image with tag
+        run: |
+          TAG=1.0.${{ github.run_number }}
+          docker build -t bunny543/algorithm-visualizer:$TAG .
+          docker tag bunny543/algorithm-visualizer:$TAG bunny543/algorithm-visualizer:latest
+
+      - name: Push Docker image with version tag
+        run: |
+          TAG=1.0.${{ github.run_number }}
+          docker push bunny543/algorithm-visualizer:$TAG
+
+      - name: Push Docker image with latest tag
+        run: docker push bunny543/algorithm-visualizer:latest
