@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorting Visualizer | Puneet Kathpalia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Sorting Algorithm Visualizer</h1>
+        <p>Visualize how different sorting algorithms work</p>
+    </header>
+
+    <div class="controls">
+        <button class="btn-primary" onclick="generateArray()">New Array</button>
+        <button onclick="bubbleSort()">Bubble Sort</button>
+        <button onclick="selectionSort()">Selection Sort</button>
+        <button onclick="insertionSort()">Insertion Sort</button>
+        <button onclick="quickSort()">Quick Sort</button>
+        <button onclick="mergeSort()">Merge Sort</button>
+        <button class="btn-stop" onclick="stopSorting()" id="stopBtn" disabled>Stop Sorting</button>
+    </div>
+
+    <div class="bar-container" id="container"></div>
+
+    <footer>
+        <p>Created with ❤️ by <span class="creator">Puneet Kathpalia</span></p>
+        <p>An interactive visualization tool for sorting algorithms</p>
+    </footer>
+    <script>
+        let array = [];
+        let isSorting = false;
+        let shouldStop = false;
+        let animationSpeed = 50;
+
+        function generateArray() {
+            if (isSorting) return;
+            shouldStop = false;
+
+            array = [];
+            const container = document.getElementById('container');
+            container.innerHTML = '';
+
+            const size = Math.min(40, Math.floor(window.innerWidth / 20));
+            for (let i = 0; i < size; i++) {
+                array.push(Math.floor(Math.random() * 180) + 20);
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = `${array[i]}px`;
+                bar.setAttribute('data-value', array[i]);
+                container.appendChild(bar);
+            }
+
+            document.getElementById('stopBtn').disabled = true;
+        }
+
+        function stopSorting() {
+            shouldStop = true;
+            document.getElementById('stopBtn').disabled = true;
+        }
+
+        async function updateBars(comparing = [], swapping = [], sorted = [], pivot = -1) {
+            if (shouldStop) throw new Error("Sorting stopped by user");
+
+            const bars = document.querySelectorAll('.bar');
+
+            bars.forEach((bar, i) => {
+                bar.style.height = `${array[i]}px`;
+                bar.setAttribute('data-value', array[i]);
+                bar.className = 'bar';
+
+                if (comparing.includes(i)) bar.classList.add('comparing');
+                if (swapping.includes(i)) bar.classList.add('swapping');
+                if (sorted.includes(i)) bar.classList.add('sorted');
+                if (i === pivot) bar.classList.add('pivot');
+            });
+
+            await new Promise(r => setTimeout(r, animationSpeed));
+        }
+
+        function disableButtons(disable) {
+            document.querySelectorAll('button').forEach(btn => {
+                if (!btn.textContent.includes('New') && !btn.textContent.includes('Stop')) {
+                    btn.disabled = disable;
+                }
+            });
+            document.getElementById('stopBtn').disabled = !disable;
+            isSorting = disable;
+        }
+        async function bubbleSort() {
+            if (isSorting) return;
+            shouldStop = false;
+            disableButtons(true);
+
+            try {
+                for (let i = 0; i < array.length; i++) {
+                    for (let j = 0; j < array.length - i - 1; j++) {
+                        await updateBars([j, j + 1]);
+
+                        if (array[j] > array[j + 1]) {
+                            [array[j], array[j + 1]] = [array[j + 1], array[j]];
+                            await updateBars([], [j, j + 1]);
+                        }
+                    }
+                    await updateBars([], [], Array.from({ length: i + 1 }, (_, k) => array.length - 1 - k));
+                }
+            } catch (e) {
+                console.log("Sorting stopped");
+            } finally {
+                disableButtons(false);
+            }
+        }
+
+        async function selectionSort() {
+            if (isSorting) return;
+            shouldStop = false;
+            disableButtons(true);
+
+            try {
+                for (let i = 0; i < array.length; i++) {
+                    let min = i;
+                    for (let j = i + 1; j < array.length; j++) {
+                        await updateBars([min, j]);
+                        if (array[j] < array[min]) min = j;
+                    }
+
+                    if (min !== i) {
+                        [array[i], array[min]] = [array[min], array[i]];
+                        await updateBars([], [i, min]);
+                    }
+                    await updateBars([], [], Array.from({ length: i + 1 }, (_, k) => k));
+                }
+            } catch (e) {
+                console.log("Sorting stopped");
+            } finally {
+                disableButtons(false);
+            }
+        }
+
+        async function insertionSort() {
+            if (isSorting) return;
+            shouldStop = false;
+            disableButtons(true);
+
+            try {
+                for (let i = 1; i < array.length; i++) {
+                    let j = i;
+                    while (j > 0 && array[j] < array[j - 1]) {
+                        await updateBars([j, j - 1]);
+                        [array[j], array[j - 1]] = [array[j - 1], array[j]];
+                        await updateBars([], [j, j - 1]);
+                        j--;
+                    }
+                    await updateBars([], [], Array.from({ length: i + 1 }, (_, k) => k));
+                }
+            } catch (e) {
+                console.log("Sorting stopped");
+            } finally {
+                disableButtons(false);
+            }
+        }
+
+        async function quickSort() {
+            if (isSorting) return;
+            shouldStop = false;
+            disableButtons(true);
+
+            try {
+                await _quickSort(0, array.length - 1);
+                await updateBars([], [], Array.from({ length: array.length }, (_, i) => i));
+            } catch (e) {
+                console.log("Sorting stopped");
+            } finally {
+                disableButtons(false);
+            }
+        }
+
+        async function _quickSort(low, high) {
+            if (low < high) {
+                const pi = await partition(low, high);
+                await _quickSort(low, pi - 1);
+                await _quickSort(pi + 1, high);
+            }
+        }
+
+        async function partition(low, high) {
+            const pivot = array[high];
+            let i = low - 1;
+
+            for (let j = low; j < high; j++) {
+                await updateBars([j, high], [], [], high);
+                if (array[j] < pivot) {
+                    i++;
+                    [array[i], array[j]] = [array[j], array[i]];
+                    await updateBars([], [i, j], [], high);
+                }
+            }
+
+            [array[i + 1], array[high]] = [array[high], array[i + 1]];
+            await updateBars([], [i + 1, high], [], high);
+            return i + 1;
+        }
+
+        async function mergeSort() {
+            if (isSorting) return;
+            shouldStop = false;
+            disableButtons(true);
+
+            try {
+                await _mergeSort(0, array.length - 1);
+                await updateBars([], [], Array.from({ length: array.length }, (_, i) => i));
+            } catch (e) {
+                console.log("Sorting stopped");
+            } finally {
+                disableButtons(false);
+            }
+        }
+
+        async function _mergeSort(l, r) {
+            if (l >= r) return;
+            const m = Math.floor((l + r) / 2);
+            await _mergeSort(l, m);
+            await _mergeSort(m + 1, r);
+            await merge(l, m, r);
+        }
+
+        async function merge(l, m, r) {
+            const n1 = m - l + 1;
+            const n2 = r - m;
+            const L = new Array(n1), R = new Array(n2);
+
+            for (let i = 0; i < n1; i++) L[i] = array[l + i];
+            for (let j = 0; j < n2; j++) R[j] = array[m + 1 + j];
+
+            let i = 0, j = 0, k = l;
+            while (i < n1 && j < n2) {
+                await updateBars([l + i, m + 1 + j]);
+                if (L[i] <= R[j]) array[k++] = L[i++];
+                else array[k++] = R[j++];
+                await updateBars([], [k - 1]);
+            }
+            while (i < n1) array[k++] = L[i++];
+            while (j < n2) array[k++] = R[j++];
+        }
+        generateArray();
+    </script>
+</body>
+</html>
