@@ -3,12 +3,12 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "bunny543/algorithm-visualizer:latest"
+        APP_PORT = "90"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                // Checkout code from GitHub
                 git branch: 'main', url: 'https://github.com/PuneetKathpalia/Algorithm-Visualizer.git'
             }
         }
@@ -22,26 +22,13 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        bat 'echo Logging in to Docker Hub...'
-                        bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
-                        bat 'docker push %DOCKER_IMAGE%'
-                    }
-                }
-            }
-        }
-
         stage('Deploy Docker Container') {
             steps {
                 script {
-                    bat 'echo Deploying container using image: %DOCKER_IMAGE%'
-                    bat 'docker pull %DOCKER_IMAGE%'
+                    bat 'echo Deploying container on port %APP_PORT%'
                     bat 'docker stop Algorithm-Visualizer || exit 0'
                     bat 'docker rm Algorithm-Visualizer || exit 0'
-                    bat 'docker run -d -p 90:90 --name Algorithm-Visualizer %DOCKER_IMAGE%'
+                    bat 'docker run -d -p %APP_PORT%:%APP_PORT% --name Algorithm-Visualizer %DOCKER_IMAGE%'
                 }
             }
         }
@@ -49,7 +36,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline completed successfully!'
+            script {
+                echo "✅ Pipeline completed successfully!"
+                echo "🌐 Application is running at: http://localhost:${env.APP_PORT}"
+            }
         }
         failure {
             echo '❌ Pipeline failed.'
