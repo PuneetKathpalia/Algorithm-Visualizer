@@ -18,7 +18,7 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image using the Dockerfile
-                    sh 'docker build -t $DOCKER_IMAGE .'
+                    bat 'docker build -t $DOCKER_IMAGE .'
                 }
             }
         }
@@ -27,8 +27,8 @@ pipeline {
     steps {
         script {
             withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                sh 'docker push bunny543/algorithm-visualizer:latest'
+                bat 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                bat 'docker push bunny543/algorithm-visualizer:latest'
             }
         }
     }
@@ -39,10 +39,10 @@ pipeline {
             steps {
                 script {
                     // Pull the latest Docker image and run the container
-                    sh 'docker pull $DOCKER_IMAGE'
-                    sh 'docker stop Algorithm-Visualizer || true'
-                    sh 'docker rm Algorithm-Visualizer || true'
-                    sh 'docker run -d -p 90:90 --name Algorithm-Visualizer $DOCKER_IMAGE'
+                    bat 'docker pull $DOCKER_IMAGE'
+                    bat 'docker stop Algorithm-Visualizer || true'
+                    bat 'docker rm Algorithm-Visualizer || true'
+                    bat 'docker run -d -p 90:90 --name Algorithm-Visualizer $DOCKER_IMAGE'
                 }
             }
         }
